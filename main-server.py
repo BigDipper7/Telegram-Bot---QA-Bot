@@ -1,9 +1,15 @@
 # coding=utf-8
 #!/usr/bin/env python
-from telegram import Bot
+from telegram import Bot, ParseMode
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
+import urllib
+import time
+import thread
+import json
 
 TOKEN = '192123489:AAFzhC6qzSzbii-FVaDxxzWuKENIANzzH7U'
+HOST = 'http://localhost:8080'
+URL = '/json/query'
 
 def main():
     updater = Updater(token = TOKEN)
@@ -64,9 +70,42 @@ def echoMsgCB(bot, update):
             if e.type == u'bot_command' and e.offset == 0:
                 txt = txt[e.length:]
                 print 'new txt=|'+txt+'|'
-                bot.sendMessage(chat_id=uid,text="echo:\n"+txt)
+                # bot.sendMessage(chat_id=uid,text="echo:\n"+txt)
+                # res = queryTomcat(uid, txt)
+                bot.sendMessage(chat_id=uid,text='小水管，正在查询中，请稍后...')
+                thread.start_new_thread(worker,(bot, uid, txt,1))
+                # bot.sendMessage(chat_id=uid,text=res)
 
     print '----------------echo success------------------'
+
+def queryTomcat(uid, text):
+    print 'begin doing querying...'
+    params = urllib.urlencode({'uid':uid, 'qatxt':text.encode('utf-8')})
+    f = urllib.urlopen(HOST+URL, params)
+    result = f.read()
+    print result
+    test = json.loads(result)
+    print test
+    qus = test['question']
+    aut = test['answers'][0]['author']
+    print qus, aut
+    return result, qus, aut
+
+def worker(bot, uid, text, interval):
+    cnt = 0
+    while cnt<1:
+        print 'Thread:(%d) Time:%s\n'%(uid, time.ctime())
+        time.sleep(interval)
+        cnt+=1
+    res, qus, aut = queryTomcat(uid, text)
+    bot.sendMessage(chat_id=uid,text=res)
+    bot.sendMessage(chat_id=uid,text=qus)
+    bot.sendMessage(chat_id=uid,text=qus.encode('utf-8'))
+    bot.sendMessage(chat_id=uid,text=aut,parse_mode=ParseMode.HTML)
+    bot.sendMessage(chat_id=uid,text=aut.decode('ISO-8859-1'))
+    bot.sendMessage(chat_id=uid,text=aut.encode('utf-8'))
+    bot.sendMessage(chat_id=uid,text='<b>'+aut+'</b>',parse_mode=ParseMode.HTML)
+    thread.exit_thread()
 
 
 if __name__ == '__main__':
