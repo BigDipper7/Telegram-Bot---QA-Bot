@@ -87,10 +87,12 @@ def queryTomcat(uid, text):
     test = json.loads(result)
     print test
     qus = test['question']
-    aut = test['answers'][0]['author']
-    con = test['answers'][0]['content']
-    print qus, aut, con
-    return result, qus, aut, con
+    # aut = test['answers'][0]['author']
+    # con = test['answers'][0]['content']
+    # print qus, aut, con
+    answers = test['answers']
+    # return result, qus, aut, con
+    return result, qus, answers
 
 def worker(bot, uid, text, interval):
     cnt = 0
@@ -98,19 +100,32 @@ def worker(bot, uid, text, interval):
         print 'Thread:(%d) Time:%s\n'%(uid, time.ctime())
         time.sleep(interval)
         cnt+=1
-    res, qus, aut, con = queryTomcat(uid, text)
-    print 'before process:'+con
-    con = con.replace('<p>','')
-    con = con.replace('</p>','\n')
-    print 'after process:'+con
-    bot.sendMessage(chat_id=uid,text=res)
-    bot.sendMessage(chat_id=uid,text=qus)
-    # bot.sendMessage(chat_id=uid,text=qus.encode('utf-8'))#same result like upper one
-    bot.sendMessage(chat_id=uid,text=aut,parse_mode=ParseMode.HTML)
-    bot.sendMessage(chat_id=uid,text=con,parse_mode=ParseMode.HTML)
-    # bot.sendMessage(chat_id=uid,text=aut.decode('ISO-8859-1'))#bad using
-    # bot.sendMessage(chat_id=uid,text=aut.encode('utf-8'))#bad using
-    # bot.sendMessage(chat_id=uid,text='<b>'+aut+'</b>',parse_mode=ParseMode.HTML)#bad using
+    # res, qus, aut, con = queryTomcat(uid, text)
+    res, qus, answers = queryTomcat(uid, text)
+    #print 'before process:'+con
+    # con = con.replace('<p>','')
+    # con = con.replace('</p>','\n')
+    # print 'after process:'+con
+    #bot.sendMessage(chat_id=uid,text=res)
+    #bot.sendMessage(chat_id=uid,text=qus)
+    ## bot.sendMessage(chat_id=uid,text=qus.encode('utf-8'))#same result like upper one
+    #bot.sendMessage(chat_id=uid,text=aut,parse_mode=ParseMode.HTML)
+    #bot.sendMessage(chat_id=uid,text=con,parse_mode=ParseMode.HTML)
+    ## bot.sendMessage(chat_id=uid,text=aut.decode('ISO-8859-1'))#bad using
+    ## bot.sendMessage(chat_id=uid,text=aut.encode('utf-8'))#bad using
+    ## bot.sendMessage(chat_id=uid,text='<b>'+aut+'</b>',parse_mode=ParseMode.HTML)#bad using
+    if len(answers)>0:
+        print 'get answers:'
+        bot.sendMessage(chat_id=uid, text='已找到答案，请稍后...')
+        for ans in answers:
+            print ans
+            finContent = '问题:'+ans['qus'].encode('utf-8')+'\n----------------------\n答案:'+ans['ans'].encode('utf-8')+'\n\n\n相似性:'+str(ans['sco'])
+            print finContent
+            bot.sendMessage(chat_id=uid, text=finContent)
+    else:
+        print 'no answers'
+        bot.sendMessage(chat_id=uid, text='没找到答案，换个问题吧~')
+
     thread.exit_thread()
 
 
