@@ -88,8 +88,9 @@ def queryTomcat(uid, text):
     print test
     qus = test['question']
     aut = test['answers'][0]['author']
-    print qus, aut
-    return result, qus, aut
+    con = test['answers'][0]['content']
+    print qus, aut, con
+    return result, qus, aut, con
 
 def worker(bot, uid, text, interval):
     cnt = 0
@@ -97,14 +98,19 @@ def worker(bot, uid, text, interval):
         print 'Thread:(%d) Time:%s\n'%(uid, time.ctime())
         time.sleep(interval)
         cnt+=1
-    res, qus, aut = queryTomcat(uid, text)
+    res, qus, aut, con = queryTomcat(uid, text)
+    print 'before process:'+con
+    con = con.replace('<p>','')
+    con = con.replace('</p>','\n')
+    print 'after process:'+con
     bot.sendMessage(chat_id=uid,text=res)
     bot.sendMessage(chat_id=uid,text=qus)
-    bot.sendMessage(chat_id=uid,text=qus.encode('utf-8'))
+    # bot.sendMessage(chat_id=uid,text=qus.encode('utf-8'))#same result like upper one
     bot.sendMessage(chat_id=uid,text=aut,parse_mode=ParseMode.HTML)
-    bot.sendMessage(chat_id=uid,text=aut.decode('ISO-8859-1'))
-    bot.sendMessage(chat_id=uid,text=aut.encode('utf-8'))
-    bot.sendMessage(chat_id=uid,text='<b>'+aut+'</b>',parse_mode=ParseMode.HTML)
+    bot.sendMessage(chat_id=uid,text=con,parse_mode=ParseMode.HTML)
+    # bot.sendMessage(chat_id=uid,text=aut.decode('ISO-8859-1'))#bad using
+    # bot.sendMessage(chat_id=uid,text=aut.encode('utf-8'))#bad using
+    # bot.sendMessage(chat_id=uid,text='<b>'+aut+'</b>',parse_mode=ParseMode.HTML)#bad using
     thread.exit_thread()
 
 
